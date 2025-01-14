@@ -1,0 +1,627 @@
+---
+title: "FinalProject"
+output: html_document
+date: "2024-12-14"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r}
+library(addAlpha)
+library(splitstackshape)
+library(ghibli)  
+```
+
+
+```{r }
+# color pallette
+theColours <- ghibli_palette("MononokeLight", n = 7)  
+theColoursT <- add.alpha(theColours)
+```
+
+
+```{r}
+# dataset
+titanic <- read.csv("C:/Users/ALEXIS/Downloads/Titanic-Dataset.csv")
+```
+
+
+
+```{r }
+#summarize
+summary(titanic)
+str(titanic)
+```
+
+```{r}
+# remove unnecessary columns
+titanic <- titanic[, !(names(titanic) %in% c("PassengerId", "Name", "Ticket", "Cabin"))]
+```
+
+
+
+```{r }
+# fill missing Age values with the median age
+titanic$Age[is.na(titanic$Age)] <- median(titanic$Age, na.rm = TRUE)
+```
+
+
+```{r}
+# fill missing Embarked values with the most frequent value 
+titanic$Embarked[is.na(titanic$Embarked)] <- "S" 
+```
+
+
+
+```{r }
+# convert categorical variables to factors
+titanic$Survived <- as.factor(titanic$Survived)
+titanic$Pclass <- as.factor(titanic$Pclass)
+titanic$Sex <- as.factor(titanic$Sex)
+titanic$Embarked <- as.factor(titanic$Embarked)
+```
+
+
+```{r}
+# summarize again
+summary(titanic)
+str(titanic)
+```
+
+
+
+```{r }
+# check for missing values
+colSums(is.na(titanic))
+```
+
+
+# Exploratory Data Analysis (EDA)
+
+### Survival by Gender and Class
+```{r}
+# counts 
+female_died <- c(
+  sum(titanic$Pclass == 1 & titanic$Sex == "female" & titanic$Survived == 0),
+  sum(titanic$Pclass == 2 & titanic$Sex == "female" & titanic$Survived == 0),
+  sum(titanic$Pclass == 3 & titanic$Sex == "female" & titanic$Survived == 0)
+)
+female_survived <- c(
+  sum(titanic$Pclass == 1 & titanic$Sex == "female" & titanic$Survived == 1),
+  sum(titanic$Pclass == 2 & titanic$Sex == "female" & titanic$Survived == 1),
+  sum(titanic$Pclass == 3 & titanic$Sex == "female" & titanic$Survived == 1)
+)
+male_died <- c(
+  sum(titanic$Pclass == 1 & titanic$Sex == "male" & titanic$Survived == 0),
+  sum(titanic$Pclass == 2 & titanic$Sex == "male" & titanic$Survived == 0),
+  sum(titanic$Pclass == 3 & titanic$Sex == "male" & titanic$Survived == 0)
+)
+male_survived <- c(
+  sum(titanic$Pclass == 1 & titanic$Sex == "male" & titanic$Survived == 1),
+  sum(titanic$Pclass == 2 & titanic$Sex == "male" & titanic$Survived == 1),
+  sum(titanic$Pclass == 3 & titanic$Sex == "male" & titanic$Survived == 1)
+)
+
+# combine counts rbind just made easier
+heights <- rbind(female_survived, female_died, male_survived, male_died)
+
+# colors
+bar_colors <- c(theColours[5], theColoursT[5], theColours[3], theColoursT[3])
+
+# y-limit
+ylimit <- c(0, max(heights) + 50)
+
+# bar chart
+barplot(heights, beside = TRUE, col = bar_colors, ylim = ylimit, 
+                         axes = FALSE, ann = FALSE, border = "white", space = c(0, 2))
+
+# y-axis
+axis(2, lwd = 2, font = 2, las = 1, 
+     at = seq(ylimit[1], ylimit[2], by = 50), 
+     labels = pretty(seq(ylimit[1], ylimit[2], by = 50)))
+
+# y-axis label
+mtext("Passenger Count", side = 2, line = 3, cex = 1.2, font = 2)
+
+# x-axis labels 
+mtext("1st Class", side = 1, at = 4, line = 1, cex = 1.2, font = 2)
+mtext("2nd Class", side = 1, at = 10.1, line = 1, cex = 1.2, font = 2)
+mtext("3rd Class", side = 1, at = 16.1, line = 1, cex = 1.2, font = 2)
+
+# title
+mtext("Survival by Gender and Class", side = 3, line = 2, cex = 1.5, font = 2)
+
+# legend 
+legend("topleft", legend = c("Female Survived", "Female Died", "Male Survived", "Male Died"),
+       fill = bar_colors, bty = "n", cex = 0.9)
+
+```
+
+
+# Chart of Averages For Quantitative Variables
+
+```{r }
+# numeric variables
+numericVariables <- c("Age", "Fare", "SibSp", "Parch")
+
+# calculate means and standard deviations for numeric variables
+means <- colMeans(titanic[, numericVariables], na.rm = TRUE)
+sds <- apply(titanic[, numericVariables], 2, sd, na.rm = TRUE)
+```
+
+### Age, Fare, Parch SibSP Distribution
+```{r}
+# Layout and colors
+par(omi = c(0.25, 1, 0.1, 0.1), mar = c(5, 8, 2, 1)) 
+box_colours <- theColours[1]  
+border_colours <- theColoursT[1]  
+
+# Age
+age_data <- data.frame(
+  Variable = rep("Age", nrow(titanic)),
+  Value = titanic$Age
+)
+
+# boxplot 
+boxplot(Value ~ Variable,
+        data = age_data,
+        at = 1,
+        col = box_colours,
+        border = border_colours,
+        horizontal = TRUE,
+        axes = FALSE,
+        boxwex = 0.75,
+        staplewex = 0.5,
+        outwex = 0.5,
+        lwd = 1.2,
+        ann = FALSE)
+
+# x-axis
+axis(1, at = seq(0, 100, by = 10), 
+     tck = -0.015, lwd = 2, font = 2, cex.axis = 0.8)
+
+# y-axis
+mtext("Age", side = 2, at = 1, line = 1, las = 1, font = 2, cex = 0.9)
+
+# title
+mtext("Distribution of Age", side = 3, line = 1, cex = 1.5, font = 2)
+mtext("Values", side = 1, line = 2.5, cex = 1.2, font = 2, adj = 0.54)
+
+```
+
+```{r}
+# Layout and colors
+par(omi = c(0.25, 1, 0.1, 0.1), mar = c(5, 8, 2, 1)) 
+box_colours <- theColours[2] 
+border_colours <- theColoursT[2]  
+
+# Fare data
+fare_data <- data.frame(
+  Variable = rep("Fare", nrow(titanic)),
+  Value = titanic$Fare
+)
+
+# boxplot
+boxplot(Value ~ Variable,
+        data = fare_data,
+        at = 1,
+        col = box_colours,
+        border = border_colours,
+        horizontal = TRUE,
+        axes = FALSE,
+        boxwex = 0.75,
+        staplewex = 0.5,
+        outwex = 0.5,
+        lwd = 1.2,
+        ann = FALSE)
+
+# x-axis
+axis(1, at = seq(0, 300, by = 50), 
+     tck = -0.015, lwd = 2, font = 2, cex.axis = 0.8)
+
+# y-axis 
+mtext("Fare", side = 2, at = 1, line = 1, las = 1, font = 2, cex = 0.9)
+
+# title
+mtext("Distribution of Fare", side = 3, line = 1, cex = 1.5, font = 2, adj = 0.15)
+mtext("Values", side = 1, line = 2.5, cex = 1.2, font = 2, adj = 0.3)
+
+
+```
+
+```{r}
+# Layout
+par(omi = c(0.25, 1, 0.1, 0.1), mar = c(5, 8, 2, 1)) 
+
+# Colors 
+box_colours <- theColours[3:7]  
+border_colours <- theColoursT[3:7]  
+
+# SibSp and Parch
+sib_parch_data <- data.frame(
+  Variable = rep(c("SibSp", "Parch"), each = nrow(titanic)),
+  Value = c(titanic$SibSp, titanic$Parch)
+)
+
+xlimit <- max(sib_parch_data$Value, na.rm = TRUE)
+
+# boxplot
+boxplot(Value ~ Variable,
+        data = sib_parch_data,
+        at = 1:2,
+        col = box_colours,
+        border = "black",
+        horizontal = TRUE,
+        axes = FALSE,
+        boxwex = 0.75,
+        staplewex = 0.5,
+        outwex = 0.5,
+        lwd = 1.2,
+        xlim = c(0, xlimit + 2),
+        ann = FALSE)
+
+# x-axis
+axis(1, at = seq(0, xlimit + 2, by = 2), 
+     tck = -0.015, lwd = 2, font = 2, cex.axis = 0.8)
+
+# y-axis 
+mtext(c("SibSp", "Parch"), side = 2, at = 1:2, line = 1, las = 1, font = 2, cex = 0.9)
+
+# title
+mtext("Distribution of SibSp and Parch", side = 3, line = 1, cex = 1.5, font = 2)
+mtext("Values", side = 1, line = 2.5, cex = 1.2, font = 2, adj = 0.55) 
+
+
+```
+
+### Age Distribution by Survival Status
+
+```{r }
+# colors
+colours <- c(theColours[3], theColours[5])  
+
+# empty plot for the violin plot
+plot(1, type = "n", xlim = c(0.3, 2.7), ylim = range(titanic$Age, na.rm = TRUE), 
+     xaxt = "n", yaxt = "n", ann = FALSE, bty = "n")
+
+# density for non-survivors 
+density_non_survived <- density(titanic$Age[titanic$Survived == 0], na.rm = TRUE, bw = "nrd0", adjust = 1)
+density_non_survived$y <- density_non_survived$y / max(density_non_survived$y) * 0.4  
+
+# density for survivors 
+density_survived <- density(titanic$Age[titanic$Survived == 1], na.rm = TRUE, bw = "nrd0", adjust = 1)
+density_survived$y <- density_survived$y / max(density_survived$y) * 0.4  
+
+# survivor density as a polygon
+polygon(x = 1 - density_non_survived$y, y = density_non_survived$x, col = colours[1], border = colours[1])
+polygon(x = 1 + density_non_survived$y, y = density_non_survived$x, col = colours[1], border = colours[1])
+
+# survivor density as a polygon
+polygon(x = 2 - density_survived$y, y = density_survived$x, col = colours[2], border = colours[2])
+polygon(x = 2 + density_survived$y, y = density_survived$x, col = colours[2], border = colours[2])
+
+# median points 
+points(1, median(titanic$Age[titanic$Survived == 0], na.rm = TRUE), pch = 19, cex = 1.5, col = "black")
+points(2, median(titanic$Age[titanic$Survived == 1], na.rm = TRUE), pch = 19, cex = 1.5, col = "black")
+
+# x-axis 
+axis(1, at = c(1, 2), labels = c("Non-Survivors", "Survivors"), font = 2, cex.axis = 1.2, lwd = 0)
+
+# y-axis 
+axis(2, at = pretty(range(titanic$Age, na.rm = TRUE)), labels = pretty(range(titanic$Age, na.rm = TRUE)), 
+     las = 1, font = 2, cex.axis = 1.2, tck = -0.02)
+
+# labels
+mtext("Survival Status", side = 1, line = 3, font = 2, cex = 1.2)
+mtext("Age (Years)", side = 2, line = 2.5, font = 2, cex = 1.2)
+mtext("Age Distribution by Survival Status", side = 3, line = 1.5, font = 2, cex = 1.5)
+
+
+
+```
+
+
+# Correlation Matrix
+```{r }
+
+Variables <- c("Survived", "Pclass", "Age", "SibSp", "Parch", "Fare")
+library(corrplot)
+
+# Cramér's V
+CramerV_manual <- function(var1, var2) {
+  table_data <- table(var1, var2)
+  chi_sq <- chisq.test(table_data, correct = FALSE)$statistic
+  n <- sum(table_data)
+  k <- min(nrow(table_data) - 1, ncol(table_data) - 1)
+  V <- sqrt(as.numeric(chi_sq) / (n * k))
+  return(V)
+}
+
+
+
+# Convert variables to factors for categorical analysis
+titanic$Survived <- as.factor(titanic$Survived)
+titanic$Pclass <- as.factor(titanic$Pclass)
+
+# empty 
+corMatrix <- matrix(NA, nrow = length(Variables), ncol = length(Variables),
+                    dimnames = list(Variables, Variables))
+
+# Compute 
+for (i in 1:length(Variables)) {
+  for (j in 1:length(Variables)) {
+    var1 <- Variables[i]
+    var2 <- Variables[j]
+    
+    # Pearson Correlation 
+    if (is.numeric(titanic[[var1]]) && is.numeric(titanic[[var2]])) {
+      corMatrix[i, j] <- cor(titanic[[var1]], titanic[[var2]], use = "pairwise.complete.obs", method = "pearson")
+    }
+    
+    # Cramér's V 
+    else if (is.factor(titanic[[var1]]) && is.factor(titanic[[var2]])) {
+      corMatrix[i, j] <- CramerV_manual(titanic[[var1]], titanic[[var2]])
+    }
+    
+    # Point-Biserial Correlation 
+    else if ((is.numeric(titanic[[var1]]) && is.factor(titanic[[var2]])) ||
+             (is.factor(titanic[[var1]]) && is.numeric(titanic[[var2]]))) {
+      num_var <- ifelse(is.numeric(titanic[[var1]]), var1, var2)
+      cat_var <- ifelse(is.factor(titanic[[var1]]), var1, var2)
+      corMatrix[i, j] <- cor(titanic[[num_var]], as.numeric(as.character(titanic[[cat_var]])),
+                             use = "pairwise.complete.obs", method = "pearson")
+    }
+  }
+}
+
+# Normalize Correlation Matrix
+scaled_corMatrix <- corMatrix
+scaled_corMatrix[scaled_corMatrix < -1] <- -1
+scaled_corMatrix[scaled_corMatrix > 1] <- 1
+
+# Plot 
+corrplot(scaled_corMatrix,
+         method = "ellipse",                 
+         type = "upper",                     
+         col = colorRampPalette(c("gray75", "yellow"))(200),  
+         is.corr = FALSE,                    
+         diag = FALSE,                       
+         cl.pos = "r",                       
+         cl.cex = 1,                         
+         cl.offset = 2,                      
+         tl.cex = 1.2,                     
+         tl.col = "black",                   
+         mar = c(1, 1, 3, 3))                
+
+# Title
+mtext("Correlation Matrix of Titanic Variables", side = 3, line = 2, cex = 1.5, font = 2)
+
+
+
+```
+
+# Model 
+
+### Split
+```{r }
+set.seed(42)
+train_indices <- sample(1:nrow(titanic), size = 0.8 * nrow(titanic))
+train_data <- titanic[train_indices, ]
+test_data <- titanic[-train_indices, ]
+
+
+```
+
+### Logistic Regression Model (Survival Prediction)
+```{r}
+# Logistic Regression Model
+theModel <- glm(Survived ~ Pclass + Age, data = train_data, family = binomial)
+summary(theModel)
+
+```
+### Meet the Assumption of Multicollinearity 
+```{r}
+
+library(car)
+
+# Create a new model 
+theModel.Clean <- glm(Survived ~ Pclass + Age, data = train_data, family = binomial)
+
+# multicollinearity 
+vif_values <- vif(theModel.Clean)
+print(vif_values)
+
+
+
+```
+
+# Model Performance
+
+```{r }
+# Add squared Age term to check for linearity
+train_data$Age_sq <- train_data$Age^2
+logit_model <- glm(Survived ~ Pclass + Age + Age_sq, family = binomial, data = train_data)
+
+# Add logit values 
+train_data$logit <- predict(logit_model, newdata = train_data, type = "link")
+
+# Plot 
+plot(train_data$Age, train_data$logit, 
+     pch = 19, col = "gray50", axes = FALSE, ann = FALSE, cex = 0.6)
+lines(lowess(train_data$Age, train_data$logit), col = "red", lwd = 2)
+axis(1, at = pretty(train_data$Age), lwd = 2, tck = -0.015, font = 2)
+axis(2, at = pretty(train_data$logit), lwd = 2, tck = -0.015, font = 2, las = 2)
+mtext("Age", side = 1, line = 2.5, cex = 1.2, font = 2)
+mtext("Logit (Log-Odds of Survival)", side = 2, line = 3, cex = 1.2, font = 2)
+mtext("Linearity Check: Age vs Logit", side = 3, line = 1, cex = 1.4, font = 2)
+
+
+
+```
+
+
+
+
+
+
+```{r }
+# Cook's Distance
+cooks_dist <- cooks.distance(theModel.Clean)
+
+# Plot 
+plot(cooks_dist, pch = 19, col = "grey75", axes = FALSE, ann = FALSE, 
+     cex = 0.6, ylim = c(0, max(cooks_dist) * 1.1))
+
+# horizontal Threshold Line
+abline(h = 4 / nrow(train_data), col = "red", lwd = 2, lty = 2)
+
+# Axes 
+axis(1, at = pretty(1:length(cooks_dist)), lwd = 2, tck = -0.015, font = 2)
+axis(2, at = pretty(cooks_dist), lwd = 2, tck = -0.015, font = 2, las = 2)
+
+# title
+mtext("Observation Index", side = 1, line = 2.5, cex = 1.2, font = 2)
+mtext("Cook's Distance", side = 2, line = 3, cex = 1.2, font = 2)
+mtext("Cook's Distance for Influential Points", side = 3, line = 1, cex = 1.4, font = 2)
+
+# Highlight Influential Points
+threshold <- 4 / nrow(train_data)
+influential_points <- which(cooks_dist > threshold)
+points(influential_points, cooks_dist[influential_points], 
+       pch = 19, col = "red", cex = 0.7)
+
+
+
+
+
+```
+# Model Performance
+```{r}
+# predicted 
+test_data$predicted_prob <- predict(theModel.Clean, newdata = test_data, type = "response")
+
+# margins 
+par(mar = c(5, 5, 4, 2) + 0.5)
+
+# y-axis 
+ylim_range <- c(0, 1.4)  
+
+# boxplot
+boxplot(test_data$predicted_prob ~ test_data$Survived,
+        col =  c(theColours[5], theColours[3]),  
+        axes = FALSE, ann = FALSE,     
+        border = "black", outline = TRUE, boxwex = 0.5, ylim = ylim_range)
+
+# threshold line
+abline(h = 0.5, col = "red", lwd = 2, lty = 2)
+
+# axes 
+axis(1, at = 1:2, labels = c("Died", "Survived"), 
+     lwd = 0, font = 2, cex.axis = 1.2, line = 0.5) 
+axis(2, at = seq(0, 1.2, by = 0.2), lwd = 2, font = 2, las = 1, tck = -0.02)
+
+# labels
+mtext("Observed Survival", side = 1, line = 3.5, cex = 1.5, font = 2)
+mtext("Predicted Probability of Survival", side = 2, line = 3.5, cex = 1.5, font = 2)
+
+# title 
+mtext("Predicted vs Observed Survival", side = 3, line = 2, cex = 1.8, font = 2)
+
+
+
+```
+
+
+```{r}
+
+# Predicted probabilities for test set
+test_data$predicted_prob <- predict(theModel.Clean, newdata = test_data, type = "response")
+
+# Convert
+threshold <- 0.5
+yP.Class <- ifelse(test_data$predicted_prob >= threshold, 1, 0)
+
+# Confusion Matrix Calculation
+TP <- sum(yP.Class == 1 & test_data$Survived == 1)  
+TN <- sum(yP.Class == 0 & test_data$Survived == 0) 
+FP <- sum(yP.Class == 1 & test_data$Survived == 0)  
+FN <- sum(yP.Class == 0 & test_data$Survived == 1)  
+
+# Confusion Matrix
+confusionMatrix <- matrix(c(TP, FN, FP, TN), nrow = 2, byrow = TRUE,
+                          dimnames = list(c("True = Satisfied", "True = Dissatisfied"),
+                                          c("Pred = Satisfied", "Pred = Dissatisfied")))
+print("Confusion Matrix:")
+print(confusionMatrix)
+
+# metrics calculation
+modelAccuracy <- mean(yP.Class == test_data$Survived)
+precision <- TP / (TP + FP)
+sensitivity <- TP / (TP + FN)
+specificity <- TN / (TN + FP)
+
+# print metrics
+print(paste("Model Accuracy:", round(modelAccuracy, 3)))
+print(paste("Precision:", round(precision, 3)))
+print(paste("Sensitivity:", round(sensitivity, 3)))
+print(paste("Specificity:", round(specificity, 3)))
+
+
+# thresholds 
+thresholds <- seq(0, 1, by = 0.01)
+sensitivity.ROC <- specificity.ROC <- numeric(length(thresholds))
+
+for (i in seq_along(thresholds)) {
+  yP.Threshold <- ifelse(test_data$predicted_prob >= thresholds[i], 1, 0)
+  TP <- sum(yP.Threshold == 1 & test_data$Survived == 1)
+  TN <- sum(yP.Threshold == 0 & test_data$Survived == 0)
+  FP <- sum(yP.Threshold == 1 & test_data$Survived == 0)
+  FN <- sum(yP.Threshold == 0 & test_data$Survived == 1)
+  
+  sensitivity.ROC[i] <- TP / (TP + FN)
+  specificity.ROC[i] <- TN / (TN + FP)
+}
+
+# x-axis ascending order
+x_axis <- 1 - specificity.ROC
+y_axis <- sensitivity.ROC
+
+# sort the x-axis and y-axis 
+order_idx <- order(x_axis)
+x_axis <- x_axis[order_idx]
+y_axis <- y_axis[order_idx]
+
+# Calculate AUC 
+AUC <- round(sum(diff(x_axis) * (y_axis[-length(y_axis)] + y_axis[-1]) / 2), 3)
+
+# plot
+plot(0, type = "n", xlim = c(0, 1), ylim = c(0, 1), axes = FALSE, ann = FALSE)
+
+# diagonal line 
+lines(c(0, 1), c(0, 1), col = "gray", lwd = 2)
+
+# ROC curve
+lines(x_axis, y_axis, col = "#1F78B4", lwd = 4)
+
+# axes
+axis(1, at = seq(0, 1, 0.2), labels = seq(0, 1, 0.2), lwd = 2, font = 2, cex.axis = 1.2)
+axis(2, at = seq(0, 1, 0.2), labels = seq(0, 1, 0.2), lwd = 2, font = 2, las = 1, cex.axis = 1.2)
+
+# title
+mtext("Specificity", side = 1, line = 3, cex = 1.5, font = 2)
+mtext("Sensitivity ", side = 2, line = 3, cex = 1.5, font = 2)
+mtext("ROC Curve for Logistic Regression Model", side = 3, line = 2.5, cex = 1.8, font = 2)
+
+# legend
+legend("bottomright", legend = sprintf("AUC = %.3f", AUC), col = "#1F78B4", lwd = 4, bty = "n", cex = 1.3, text.font = 2)
+
+```
+
+
+
+
+
