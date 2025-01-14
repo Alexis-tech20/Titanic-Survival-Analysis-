@@ -28,6 +28,6 @@ The Titanic disaster is one of the most studied historical events. By analyzing 
    - The logistic regression model demonstrated good performance with an AUC of 0.787.
    - The model effectively separated survivors and non-survivors, although some misclassifications were observed.
 
-5. **Dataset**
-Kaggle Titanic Dataset Source: https://www.kaggle.com/datasets/yasserh/titanic-dataset
-The dataset includes passenger details such as class, age, gender, and fare, which were used for analysis.
+## Dataset
+- Kaggle Titanic Dataset Source: https://www.kaggle.com/datasets/yasserh/titanic-dataset
+- The dataset includes passenger details such as class, age, gender, and fare, which were used for analysis.
